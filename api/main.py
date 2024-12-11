@@ -112,12 +112,21 @@ def votos_titulo(titulo: str):
 @app.get("/get_actor/{nombre_actor}")
 def get_actor(nombre_actor: str):
     try:
+        if 'cast' not in credits.columns or 'return' not in movies.columns:
+            return {"error": "Datos incompletos: asegúrate de que las columnas 'cast' y 'return' están disponibles."}
+
+        # Asegurar que 'return' sea numérica
+        movies['return'] = pd.to_numeric(movies['return'], errors='coerce').fillna(0)
+
+        # Filtrar películas del actor
         actor_data = credits[credits['cast'].str.contains(nombre_actor, na=False, case=False)]
         if actor_data.empty:
             return {"error": f"No se encontraron películas para el actor {nombre_actor}"}
 
-        retorno_total = actor_data['return'].sum()
-        cantidad_peliculas = actor_data.shape[0]
+        # Obtener datos relevantes
+        actor_movies = movies[movies['id'].isin(actor_data['id'])]
+        retorno_total = actor_movies['return'].sum()
+        cantidad_peliculas = actor_movies.shape[0]
         promedio_retorno = retorno_total / cantidad_peliculas if cantidad_peliculas > 0 else 0
 
         return {
@@ -129,23 +138,31 @@ def get_actor(nombre_actor: str):
     except Exception as e:
         return {"error": f"Error procesando la solicitud: {str(e)}"}
 
-# Endpoint: Información de un director
 @app.get("/get_director/{nombre_director}")
 def get_director(nombre_director: str):
     try:
+        if 'crew' not in credits.columns or 'return' not in movies.columns:
+            return {"error": "Datos incompletos: asegúrate de que las columnas 'crew' y 'return' están disponibles."}
+
+        # Asegurar que 'return' sea numérica
+        movies['return'] = pd.to_numeric(movies['return'], errors='coerce').fillna(0)
+
+        # Filtrar películas del director
         director_data = credits[credits['crew'].str.contains(nombre_director, na=False, case=False)]
         if director_data.empty:
             return {"error": f"No se encontraron películas para el director {nombre_director}"}
 
         resultados = []
         for _, row in director_data.iterrows():
-            resultados.append({
-                "titulo": row['title'],
-                "fecha_lanzamiento": row['release_date'],
-                "retorno": row['return'],
-                "costo": row['budget'],
-                "ganancia": row['revenue']
-            })
+            movie_data = movies[movies['id'] == row['id']]
+            if not movie_data.empty:
+                resultados.append({
+                    "titulo": movie_data.iloc[0]['title'],
+                    "fecha_lanzamiento": movie_data.iloc[0]['release_date'],
+                    "retorno": movie_data.iloc[0]['return'],
+                    "costo": movie_data.iloc[0]['budget'],
+                    "ganancia": movie_data.iloc[0]['revenue']
+                })
 
         return {
             "director": nombre_director,

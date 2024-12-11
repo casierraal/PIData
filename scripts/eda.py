@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 import matplotlib.pyplot as plt
 from wordcloud import WordCloud
@@ -5,6 +6,9 @@ from wordcloud import WordCloud
 # Función para cargar un archivo CSV con manejo de errores
 def load_csv_with_debug(filepath):
     print(f"Cargando archivo: {filepath}")
+    if not os.path.exists(filepath):
+        print(f"Error: El archivo {filepath} no existe.")
+        return None
     try:
         data = pd.read_csv(filepath, on_bad_lines='skip', sep=',', low_memory=False)
         print(f"Archivo cargado exitosamente: {filepath}")
@@ -25,33 +29,37 @@ movies = load_csv_with_debug(movies_path)
 # Analizar y visualizar datos cargados
 if movies is not None:
     # Convertir columnas a numéricas (reemplazando errores por NaN)
-    movies['budget'] = pd.to_numeric(movies['budget'], errors='coerce')
-    movies['revenue'] = pd.to_numeric(movies['revenue'], errors='coerce')
+    if 'budget' in movies.columns and 'revenue' in movies.columns:
+        movies['budget'] = pd.to_numeric(movies['budget'], errors='coerce')
+        movies['revenue'] = pd.to_numeric(movies['revenue'], errors='coerce')
 
-    # Gráfico de la distribución de presupuestos
-    plt.figure(figsize=(10, 6))
-    movies['budget'].dropna().plot(kind='hist', bins=50, title='Distribución de presupuestos')
-    plt.xlabel('Presupuesto')
-    plt.savefig('visualizations/budget_distribution.png')
-    plt.close()
+        # Gráfico de la distribución de presupuestos
+        if not movies['budget'].isnull().all():
+            plt.figure(figsize=(10, 6))
+            movies['budget'].dropna().plot(kind='hist', bins=50, title='Distribución de presupuestos')
+            plt.xlabel('Presupuesto')
+            plt.savefig('visualizations/budget_distribution.png')
+            plt.close()
 
-    # Gráfico de la distribución de ingresos
-    plt.figure(figsize=(10, 6))
-    movies['revenue'].dropna().plot(kind='hist', bins=50, title='Distribución de ingresos')
-    plt.xlabel('Ingresos')
-    plt.savefig('visualizations/revenue_distribution.png')
-    plt.close()
+        # Gráfico de la distribución de ingresos
+        if not movies['revenue'].isnull().all():
+            plt.figure(figsize=(10, 6))
+            movies['revenue'].dropna().plot(kind='hist', bins=50, title='Distribución de ingresos')
+            plt.xlabel('Ingresos')
+            plt.savefig('visualizations/revenue_distribution.png')
+            plt.close()
 
     # Nube de palabras para títulos de películas
-    wordcloud = WordCloud(width=800, height=400, background_color='white').generate(' '.join(movies['title'].dropna()))
-    plt.figure(figsize=(12, 6))
-    plt.imshow(wordcloud, interpolation='bilinear')
-    plt.axis('off')
-    plt.title('Nube de palabras: Títulos de películas')
-    plt.savefig('visualizations/title_wordcloud.png')
-    plt.close()
+    if 'title' in movies.columns and not movies['title'].isnull().all():
+        wordcloud = WordCloud(width=800, height=400, background_color='white').generate(' '.join(movies['title'].dropna()))
+        plt.figure(figsize=(12, 6))
+        plt.imshow(wordcloud, interpolation='bilinear')
+        plt.axis('off')
+        plt.title('Nube de palabras: Títulos de películas')
+        plt.savefig('visualizations/title_wordcloud.png')
+        plt.close()
 
-    print("Visualizaciones guardadas en la carpeta 'visualizations'.")
+        print("Visualizaciones guardadas en la carpeta 'visualizations'.")
 
 # Mostrar resumen de valores nulos
 if movies is not None:
