@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+pandas
+pyspark
+scikit-learn
+python-dotenv
+matplotlib
+wordcloud

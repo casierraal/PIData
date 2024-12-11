@@ -1,6 +1,0 @@
-# Ignorar archivos grandes y carpetas
-data/
-*.pkl
-*.csv
-*.zip
-*.log
